@@ -16,10 +16,29 @@ app.get("/", (req, res) => {
 })
 
 app.post("/video", upload.single("video"),(req, res) => {
-    console.log(req.body);
-    console.log(req?.file);
+   const video = req.file;
 
-    res.send("Success");
+   if(video && video.path) {
+    const child = fork(
+                path.resolve(__dirname, "../videoProcessing.js")
+            );
+
+            child.send({
+                path: video.path,
+                name: `proccessed_${video.filename}`
+            });
+
+            child.on("message", (err) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send("Error occured")
+                }
+
+                res.send("Successful")
+            });
+   } else {
+    res.send("File not uploaded")
+   }
 })
 
 
